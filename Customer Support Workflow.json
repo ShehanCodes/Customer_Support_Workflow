@@ -1,0 +1,342 @@
+{
+  "name": "Customer Support Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7185103b-c530-44e7-9a8c-33f647f2627f",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ddHGSWSL5CdHUPM1",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Customer Support",
+              "description": "Classifies incoming messages to identify if they are related to customer support inquiries, such as requests for assistance, troubleshooting, or product/service information."
+            },
+            {
+              "category": "Other",
+              "description": "Any email that is not customer support related."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "18f23e1e-3819-4eaa-8548-544addea3bf8",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        208
+      ],
+      "id": "79be347f-049a-463c-9526-573412884619",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "iLfvPWzkTTF2mEMM",
+          "name": "Demo"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        560,
+        304
+      ],
+      "id": "54d2e164-b033-477f-b878-27a11e4466aa",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Gmail Trigger').item.json.text }}",
+        "options": {
+          "systemMessage": "=# Overview\nYou are a Customer Support Assistant for Engage Ceylon AI. Your role is to assist customers by answering their questions, resolving issues, and providing helpful information about our products and services using knowledgeBase tool.\n\n## Instructions:\n\n-Respond in a friendly and professional manner using emojis.\n-Use clear, simple language to make answers easy to understand.\n-If the customer’s question is unclear, politely ask for clarification.\n-Always aim to leave the customer feeling satisfied and supported.\n-When appropriate, provide additional helpful tips or resources.\n-Sign off as Mr. Helpful from Engage Ceylon AI\n\n## Output\n-Output only the body content of the email."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -144
+      ],
+      "id": "2a972233-89fc-4d9c-b96a-927637277768",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        512,
+        64
+      ],
+      "id": "1ee1cc6f-cda3-4619-adf8-cd8a72bdde5b",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "iLfvPWzkTTF2mEMM",
+          "name": "Demo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "call this tool to access Policy and FAQ information.",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "demo",
+          "mode": "list",
+          "cachedResultName": "demo"
+        },
+        "options": {
+          "pineconeNamespace": "FAQ2"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        752,
+        96
+      ],
+      "id": "49cd719d-e2bf-4e31-af6e-e2ed2e393d00",
+      "name": "knowledgeBase",
+      "credentials": {
+        "pineconeApi": {
+          "id": "Xj6EMiWC5Ww9w0Bm",
+          "name": "Demo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        304
+      ],
+      "id": "e3e53f95-120f-4c59-89fd-55a9e2304783",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "iLfvPWzkTTF2mEMM",
+          "name": "Demo"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1344,
+        -144
+      ],
+      "id": "7f67d136-40df-40d3-af43-26c285139f0c",
+      "name": "Reply to a message",
+      "webhookId": "473e3c1b-3580-4087-b12e-d14130998d6a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ddHGSWSL5CdHUPM1",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_6468955925308438986"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        992,
+        -144
+      ],
+      "id": "220e1252-564e-4e2c-b382-e0617952259c",
+      "name": "Add label to message",
+      "webhookId": "0edbbb59-f5b5-4ff8-8dae-3238e3164638",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ddHGSWSL5CdHUPM1",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "knowledgeBase": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "knowledgeBase",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Add label to message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add label to message": {
+      "main": [
+        [
+          {
+            "node": "Reply to a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2b876174-8ddd-4abf-ab0d-2a0ff1c10324",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "57a3d31480b0fd1e65efae0acc62016cde996bafcb6dd5ce25a92367bf8b6e66"
+  },
+  "id": "QtJvg8bTGzULYQm7",
+  "tags": []
+}
